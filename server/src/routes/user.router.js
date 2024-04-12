@@ -73,7 +73,7 @@ UsersRouter.post('/', async (req, res) => {
         const values = [username, first_name, last_name, fayda_identification_number, email, phone_number, password_hash];
         const insertedUser = await pool.query(insertQuery, values);
 
-        return res.status(201).json(insertedUser);
+        return res.status(201).json({ registered_user: insertedUser });
     } catch (error) {
         console.error('Error inserting user', error);
         return res.status(500).json({ error: 'Internal Server Error' });
@@ -85,10 +85,10 @@ UsersRouter.post('/', async (req, res) => {
 UsersRouter.get('/', async (req, res) => {
     try {
 
-       const users = await pool.query('SELECT * FROM trading_user ORDER BY user_id ASC');
-       console.log(users);
-       res.status(200).json({ message: 'All users queried sucessfully' })
-        
+        const users = await pool.query('SELECT * FROM trading_user ORDER BY user_id ASC');
+        // console.log(users);
+        res.status(200).json({ data: users.rows, message: 'All users queried successfully' })
+
     } catch (error) {
         console.error('Error inserting user', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -96,9 +96,10 @@ UsersRouter.get('/', async (req, res) => {
 });
 
 
-UsersRouter.get('/:user_id', async (req, res) =>{
+UsersRouter.get('/:user_id', async (req, res) => {
     try {
-        const user = await pool.query('SELECT * FROM trading_user WHERE ')
+        const user = await pool.query('SELECT * FROM trading_user WHERE user_id = $1', [req.params.user_id]);
+        res.status(200).json(user.rows[0]);
     } catch (error) {
         console.error('Error fetching user', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -112,9 +113,22 @@ UsersRouter.post('/users/login', async (req, res) => {
 
     if (result.rows.length === 0) {
         return res.status(401).json({ error: 'Invalid username or email or password' });
-      }
+    }
 
-    const user = result.rows[0];
+    try {
+        const user = result.rows[0];
+        const match = await bcrypt.compare(password, user.password_hash);
+
+        if (!match) {
+            return res.status(401).json({ error: 'Invalid username or email or password' });
+        }
+
+        res.status(200).json({ data: result.rows[0], message: 'Login successful' });
+    }
+    catch (error) {
+        console.error('Error logging in user', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 })
 
 

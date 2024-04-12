@@ -1,11 +1,13 @@
 const express = require('express');
 const http = require('http');
+const cors = require('cors');
 const helmet = require('helmet');
 const createPool = require('./src/databaseConn'); // Use a different name for clarity
 
 const app = express();
 const server = http.createServer(app);
 
+app.use(cors());
 app.use(helmet());
 app.use(express.json());
 
